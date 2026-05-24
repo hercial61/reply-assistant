@@ -7,6 +7,7 @@ import { db } from "@/lib/db"
 import { replies } from "@/lib/db/schema"
 import { nanoid } from "nanoid"
 import Anthropic from "@anthropic-ai/sdk"
+import { checkCanDraft, incrementDraftCount } from "@/lib/usage"
 
 const anthropic = new Anthropic()
 
@@ -21,6 +22,14 @@ const TONE_PROMPTS: Record<string, string> = {
 export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+
+  const usage = await checkCanDraft(session.user.id)
+  if (!usage.allowed) {
+    return NextResponse.json(
+      { error: "limit_reached", count: usage.count, limit: usage.limit },
+      { status: 402 },
+    )
+  }
 
   let customerMessage: string, tone: string
   try {
@@ -51,7 +60,6 @@ ${customerMessage.slice(0, 3000)}`,
 
   const draft = message.content[0]?.type === "text" ? message.content[0].text.trim() : ""
 
-  // Save to history
   await db.insert(replies).values({
     id: nanoid(),
     userId: session.user.id,
@@ -60,6 +68,8 @@ ${customerMessage.slice(0, 3000)}`,
     draft,
     createdAt: new Date(),
   })
+
+  await incrementDraftCount(session.user.id)
 
   return NextResponse.json({ draft })
 }

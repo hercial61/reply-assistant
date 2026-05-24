@@ -8,6 +8,13 @@
       "when": 1779636357584,
       "tag": "0000_colossal_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1779646227331,
+      "tag": "0001_nostalgic_exiles",
+      "breakpoints": true
     }
   ]
 }

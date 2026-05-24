@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { UpgradeModal } from "@/components/upgrade-modal"
 
 const TONES = [
   { value: "professional", label: "Professional" },
@@ -17,6 +18,7 @@ export default function ReplyPage() {
   const [drafting, setDrafting] = useState(false)
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const draftRef = useRef<HTMLTextAreaElement>(null)
 
   async function handleDraft() {
@@ -30,6 +32,10 @@ export default function ReplyPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerMessage: customerMessage.trim(), tone }),
       })
+      if (res.status === 402) {
+        setShowUpgrade(true)
+        return
+      }
       if (!res.ok) {
         const data = await res.json()
         setError(data.error || "Failed to generate draft")
@@ -60,6 +66,7 @@ export default function ReplyPage() {
 
   return (
     <div className="flex flex-col h-full">
+      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
       <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-3">
         <span className="text-sm font-medium text-zinc-900">Draft a reply</span>
         {draft && (
